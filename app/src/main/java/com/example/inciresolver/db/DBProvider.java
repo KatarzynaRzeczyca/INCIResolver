@@ -1,7 +1,6 @@
 package com.example.inciresolver.db;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 
 import android.content.ContentValues;
 import android.content.Context;
@@ -14,11 +13,10 @@ public class DBProvider extends SQLiteOpenHelper {
 
     public static final String DATABASE_NAME = "INCI.db";
     public static final String INCI_TABLE_NAME = "ingredients";
-    public static final String INCI_COLUMN_ID = "id";
+    //public static final String INCI_COLUMN_ID = "id";
     public static final String INCI_COLUMN_NAME = "name";
     public static final String INCI_COLUMN_DESCRIPTION = "description";
     public static final String INCI_COLUMN_QUALITY = "quality";
-    private HashMap hp;
 
     public DBProvider(Context context) {
         super(context, DATABASE_NAME , null, 1);
@@ -59,6 +57,9 @@ public class DBProvider extends SQLiteOpenHelper {
     public Ingredient getIngredientByName(String name) {
         SQLiteDatabase db = this.getReadableDatabase();
         Cursor res =  db.rawQuery( "select * from contacts where name='"+name+"'", null );
+        if(res.getCount() < 1){
+            return new Ingredient();
+        }
         res.moveToFirst();
         String inciName = res.getString(res.getColumnIndex(DBProvider.INCI_COLUMN_NAME));
         String inciDescription = res.getString(res.getColumnIndex(DBProvider.INCI_COLUMN_DESCRIPTION));

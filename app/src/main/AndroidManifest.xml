@@ -10,7 +10,8 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.INCIResolver">
 
-        <activity android:name=".MainActivity">
+        <activity android:name=".MainActivity"
+            android:launchMode="singleInstance">
             <meta-data
                 android:name="android.app.default_searchable"
                 android:value=".ShowIngredient" />
@@ -18,6 +19,11 @@
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <data android:mimeType="text/plain"/>
             </intent-filter>
         </activity>
         <activity

@@ -6,6 +6,9 @@ public class Ingredient {
     private String quality = "";
     //@android:drawable/btn_star
 
+    public Ingredient(){
+    }
+
     public Ingredient(String name, String description, String quality){
         this.name = name;
         this.description = description;
@@ -35,5 +38,12 @@ public class Ingredient {
 
     public void setQuality(String quality) {
         this.quality = quality;
+    }
+
+    public boolean isEmpty(){
+        if(name.equals("") && description.equals("") && quality.equals("")){
+            return true;
+        }
+        return false;
     }
 }

@@ -1,3 +1,11 @@
+/*
+Inspired by:
+https://www.tutorialspoint.com/how-to-display-a-list-of-images-and-text-in-a-listview-in-android
+https://google-developer-training.github.io/android-developer-fundamentals-course-practicals/en/Unit%204/101b_p_searching_an_sqlite_database.html
+https://www.tutorialspoint.com/android/android_sqlite_database.htm
+https://medium.com/@evanbishop/popupwindow-in-android-tutorial-6e5a18f49cc7
+ */
+
 package com.example.inciresolver;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -5,6 +13,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.app.SearchManager;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.Intent;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.view.Menu;
@@ -13,17 +22,19 @@ import android.widget.SearchView;
 
 import com.example.inciresolver.db.DBProvider;
 import com.example.inciresolver.db.Ingredient;
+import com.example.inciresolver.popup.PopUpClass;
 
 import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
 
+    private DBProvider mydb;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        DBProvider mydb = new DBProvider(this);
+        mydb = new DBProvider(this);
 //        mydb.deleteContact(2);
 //        mydb.deleteContact(1);
 //        mydb.insertIngredient("AQUA", "HUMEKTANT, ROZPUSZCZLNIK", "1");
@@ -77,13 +88,34 @@ public class MainActivity extends AppCompatActivity {
     public void click(View view) {
         switch(view.getId()){
             case R.id.imageButtonGallery:
-                break;//akcja
-//            case R.id.imageButtonSearch:
+                PopUpClass popUpClass = new PopUpClass();
+                popUpClass.showPopupWindow(view);
 //                Intent intentSearch = new Intent(MainActivity.this, ShowIngredient.class);
 //                startActivity(intentSearch);
-//                break;//akcja
+                break;//akcja
+
         }
 
 
+    }
+
+    public DBProvider getDatabaseProvider() {
+        return mydb;
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        handleIntent(intent);
+    }
+
+    private void handleIntent(Intent intent) {
+        Ingredient ingredient = new Ingredient();
+        if (Intent.ACTION_SEND.equals(intent.getAction())) {
+            PopUpClass popUpClass = new PopUpClass();
+            popUpClass.showPopupWindow(findViewById(R.id.main_page));
+            //use the query to search your data somehow
+        }
     }
 }

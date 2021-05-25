@@ -7,32 +7,47 @@
     android:padding="5dip">
 
     <LinearLayout
-        android:id="@+id/thumbnail"
-        android:layout_width="wrap_content"
+        android:id="@+id/row_with_description"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentLeft="true"
         android:layout_marginRight="5dip"
-        android:padding="3dip">
+        android:padding="3dip"
+        android:orientation="vertical">
+        <LinearLayout
+            android:id="@+id/thumbnail"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_marginRight="5dip"
+            android:padding="3dip">
 
-        <ImageView
-            android:id="@+id/list_image"
-            android:layout_width="50dip"
-            android:layout_height="50dip"
-            app:srcCompat="@android:drawable/btn_star"/>
+            <ImageView
+                android:id="@+id/list_image"
+                android:layout_width="50dip"
+                android:layout_height="50dip"
+                app:srcCompat="@android:drawable/btn_star"/>
 
+            <TextView
+                android:id="@+id/title"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:layout_alignTop="@+id/thumbnail"
+                android:layout_toRightOf="@+id/list_image"
+                android:textColor="#040404"
+                android:textSize="15dip"
+                android:textStyle="bold"
+                android:typeface="sans" />
+
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/description"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="#040404"
+            android:textSize="15dip"
+            android:typeface="sans" />
     </LinearLayout>
-
-    <TextView
-        android:id="@+id/title"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_alignTop="@+id/thumbnail"
-        android:layout_toRightOf="@+id/thumbnail"
-        android:gravity="center"
-        android:textColor="#040404"
-        android:textSize="15dip"
-        android:textStyle="bold"
-        android:typeface="sans" />
-
 
 </LinearLayout>

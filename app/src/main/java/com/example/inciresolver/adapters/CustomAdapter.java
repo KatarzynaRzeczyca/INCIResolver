@@ -2,6 +2,7 @@ package com.example.inciresolver.adapters;
 
 import android.content.Context;
 import android.database.DataSetObserver;
+import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -67,6 +68,10 @@ public class CustomAdapter implements ListAdapter {
             TextView tittle = convertView.findViewById(R.id.title);
             //ImageView imag = convertView.findViewById(R.id.list_image);
             tittle.setText(Ingredient.getName());
+            TextView description = convertView.findViewById(R.id.description);
+            description.setText(Ingredient.getDescription() + "\nQuality: " + Ingredient.getQuality());
+            ImageView image_star = convertView.findViewById(R.id.list_image);
+            image_star.setColorFilter(Color.GREEN);
 //            Picasso.with(context)
 //                    .load(Ingredient.Image)
 //                    .into(imag);
