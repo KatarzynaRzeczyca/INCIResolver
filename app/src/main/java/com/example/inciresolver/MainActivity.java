@@ -30,6 +30,7 @@ import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Environment;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.Menu;
@@ -60,11 +61,16 @@ import com.google.api.services.vision.v1.model.EntityAnnotation;
 import com.google.api.services.vision.v1.model.Feature;
 import com.google.api.services.vision.v1.model.Image;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -93,12 +99,34 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         mydb = new DBProvider(this);
-        ArrayList<String> dbcontent = mydb.getAllCotacts();
+        //Load database
+        try {
+            final File fileRes = new File(getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS).getAbsolutePath(), "res1.csv");
+            FileInputStream fis = new FileInputStream(fileRes);
+            DataInputStream in = new DataInputStream(fis);
+            BufferedReader br =
+                    new BufferedReader(new InputStreamReader(in));
+            String strLine;
+            while ((strLine = br.readLine()) != null) {
+                String[] str = strLine.split("\\|");
+                if(str.length == 3)
+                    mydb.insertIngredient(str[0], str[1], str[2]);
+                else
+                    throw new Exception("mydb: str != 3; " + strLine);
+            }
+            in.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }catch (Exception e) {
+            e.printStackTrace();
+        }
+        //mydb.insertIngredient("AQUA", "HUMEKTANT, ROZPUSZCZLNIK", "1");
+        //ArrayList<String> dbcontent = mydb.getAllCotacts();
         mProgressDialog = new ProgressDialog(this);
 
-        ActivityCompat.requestPermissions(MainActivity.this,
-                new String[]{Manifest.permission.GET_ACCOUNTS},
-                REQUEST_PERMISSIONS);
+//        ActivityCompat.requestPermissions(MainActivity.this,
+//                new String[]{Manifest.permission.GET_ACCOUNTS},
+//                REQUEST_PERMISSIONS);
     }
 
     @Override
@@ -173,22 +201,22 @@ public class MainActivity extends AppCompatActivity {
 //        }
 //        if (requestCode == REQUEST_GALLERY_IMAGE && resultCode == RESULT_OK && data != null) {
 //            performCloudVisionRequest(data.getData());
-        } else if (requestCode == REQUEST_CODE_PICK_ACCOUNT) {
-            if (resultCode == RESULT_OK) {
-                String email = data.getStringExtra(AccountManager.KEY_ACCOUNT_NAME);
-                AccountManager am = AccountManager.get(this);
-                Account[] accounts = am.getAccountsByType(GoogleAuthUtil.GOOGLE_ACCOUNT_TYPE);
-                for (Account account : accounts) {
-                    if (account.name.equals(email)) {
-                        mAccount = account;
-                        break;
-                    }
-                }
-                getAuthToken();
-            } else if (resultCode == RESULT_CANCELED) {
-                Toast.makeText(this, "No Account Selected", Toast.LENGTH_SHORT)
-                        .show();
-            }
+//        } else if (requestCode == REQUEST_CODE_PICK_ACCOUNT) {
+//            if (resultCode == RESULT_OK) {
+//                String email = data.getStringExtra(AccountManager.KEY_ACCOUNT_NAME);
+//                AccountManager am = AccountManager.get(this);
+//                Account[] accounts = am.getAccountsByType(GoogleAuthUtil.GOOGLE_ACCOUNT_TYPE);
+//                for (Account account : accounts) {
+//                    if (account.name.equals(email)) {
+//                        mAccount = account;
+//                        break;
+//                    }
+//                }
+//                getAuthToken();
+//            } else if (resultCode == RESULT_CANCELED) {
+//                Toast.makeText(this, "No Account Selected", Toast.LENGTH_SHORT)
+//                        .show();
+//            }
         } else if (requestCode == REQUEST_ACCOUNT_AUTHORIZATION) {
             if (resultCode == RESULT_OK) {
                 Bundle extra = data.getExtras();
@@ -347,38 +375,38 @@ public class MainActivity extends AppCompatActivity {
 //                REQUEST_GALLERY_IMAGE);
 //    }
 
-    private void pickUserAccount() {
-        String[] accountTypes = new String[]{GoogleAuthUtil.GOOGLE_ACCOUNT_TYPE};
-        Intent intent = AccountPicker.newChooseAccountIntent(null, null,
-                accountTypes, false, null, null, null, null);
-        startActivityForResult(intent, REQUEST_CODE_PICK_ACCOUNT);
-    }
+//    private void pickUserAccount() {
+//        String[] accountTypes = new String[]{GoogleAuthUtil.GOOGLE_ACCOUNT_TYPE};
+//        Intent intent = AccountPicker.newChooseAccountIntent(null, null,
+//                accountTypes, false, null, null, null, null);
+//        startActivityForResult(intent, REQUEST_CODE_PICK_ACCOUNT);
+//    }
 
     public void onTokenReceived(String token){
         accessToken = token;
         //launchImagePicker();
     }
-    private void getAuthToken() {
-        String SCOPE = "oauth2:https://www.googleapis.com/auth/cloud-platform";
-        if (mAccount == null) {
-            pickUserAccount();
-        } else {
-            new GetOAuthToken(MainActivity.this, mAccount, SCOPE, REQUEST_ACCOUNT_AUTHORIZATION)
-                    .execute();
-        }
-    }
+//    private void getAuthToken() {
+//        String SCOPE = "oauth2:https://www.googleapis.com/auth/cloud-platform";
+//        if (mAccount == null) {
+//            pickUserAccount();
+//        } else {
+//            new GetOAuthToken(MainActivity.this, mAccount, SCOPE, REQUEST_ACCOUNT_AUTHORIZATION)
+//                    .execute();
+//        }
+//    }
 
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
-                                           @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        switch (requestCode) {
-            case REQUEST_PERMISSIONS:
-                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    getAuthToken();
-                } else {
-                    Toast.makeText(MainActivity.this, "Permission Denied!", Toast.LENGTH_SHORT).show();
-                }
-        }
-    }
+//    @Override
+//    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+//                                           @NonNull int[] grantResults) {
+//        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+//        switch (requestCode) {
+//            case REQUEST_PERMISSIONS:
+//                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+//                    getAuthToken();
+//                } else {
+//                    Toast.makeText(MainActivity.this, "Permission Denied!", Toast.LENGTH_SHORT).show();
+//                }
+//        }
+//    }
 }
