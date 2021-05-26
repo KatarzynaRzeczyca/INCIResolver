@@ -18,9 +18,9 @@ public class ShowIngredient extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_show_ingredient);
 
-        Ingredient ingredient = handleIntent(getIntent());
+        ArrayList<Ingredient> ingredientsList = handleIntent(getIntent());
 
-        if(ingredient.isEmpty()){
+        if(ingredientsList.isEmpty()){
 //            PopUpClass popUpClass = new PopUpClass();
 //            popUpClass.showPopupWindow(findViewById(R.id.main_page));
             Intent intentMain = new Intent(ShowIngredient.this, MainActivity.class);
@@ -32,10 +32,7 @@ public class ShowIngredient extends AppCompatActivity {
             //NavUtils.navigateUpFromSameTask(this);
         } else{
             final ListView list = findViewById(R.id.list);
-            ArrayList<Ingredient> arrayList = new ArrayList<>();
-            arrayList.add(new Ingredient("GLYCERIN", "humektant", "BEST!"));
-            arrayList.add(ingredient);
-            CustomAdapter customAdapter = new CustomAdapter(this, arrayList);
+            CustomAdapter customAdapter = new CustomAdapter(this, ingredientsList);
             list.setAdapter(customAdapter);
         }
     }
@@ -47,14 +44,24 @@ public class ShowIngredient extends AppCompatActivity {
         handleIntent(intent);
     }
 
-    private Ingredient handleIntent(Intent intent) {
-        Ingredient ingredient = new Ingredient();
+    private ArrayList<Ingredient> handleIntent(Intent intent) {
+        ArrayList<Ingredient> ingredientsList = new ArrayList<>();
+        DBProvider mydb= new DBProvider(ShowIngredient.this);
+
         if (Intent.ACTION_SEARCH.equals(intent.getAction())) {
             String query = intent.getStringExtra(SearchManager.QUERY);
-            DBProvider mydb= new DBProvider(ShowIngredient.this);
-            ingredient = mydb.getIngredientByName(query.toUpperCase());
-            //use the query to search your data somehow
+            ingredientsList.add(mydb.getIngredientByName(query));
+        } else if(Intent.ACTION_VIEW.equals(intent.getAction())){
+            String[] ingredients = intent.getStringArrayExtra("strings");
+            for(String name: ingredients){
+                Ingredient ingredient = mydb.getIngredientByName(name);
+                if(ingredient.isEmpty()) {
+                    ingredient.setName(name.toUpperCase());
+                    ingredient.setDescription("NOT FOUND");
+                }
+                ingredientsList.add(ingredient);
+            }
         }
-        return ingredient;
+        return ingredientsList;
     }
 }

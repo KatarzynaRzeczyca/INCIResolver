@@ -11,43 +11,30 @@ https://stackoverflow.com/questions/13209494/how-to-get-the-full-file-path-from-
 
 package com.example.inciresolver;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
 
-import android.Manifest;
 import android.accounts.Account;
-import android.accounts.AccountManager;
 import android.annotation.SuppressLint;
 import android.app.ProgressDialog;
 import android.app.SearchManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
-import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Environment;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.SearchView;
 import android.widget.Toast;
 
-import com.example.inciresolver.api.FileUtils;
-import com.example.inciresolver.api.GetOAuthToken;
-import com.example.inciresolver.api.VisionController;
 import com.example.inciresolver.db.DBProvider;
-import com.example.inciresolver.db.Ingredient;
 import com.example.inciresolver.popup.PopUpClass;
-import com.google.android.gms.auth.GoogleAuthUtil;
-import com.google.android.gms.common.AccountPicker;
 import com.google.api.client.extensions.android.http.AndroidHttp;
-import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.json.JsonFactory;
@@ -61,18 +48,10 @@ import com.google.api.services.vision.v1.model.EntityAnnotation;
 import com.google.api.services.vision.v1.model.Feature;
 import com.google.api.services.vision.v1.model.Image;
 
-import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
@@ -84,7 +63,7 @@ public class MainActivity extends AppCompatActivity {
 
     private final String TAG = "CloudVisionExample";
     static final int REQUEST_GALLERY_IMAGE = 100;
-    static final int REQUEST_CODE_PICK_ACCOUNT = 101;
+    static final int REQUEST_CODE_PRINT_API_RESULT = 101;
     static final int REQUEST_ACCOUNT_AUTHORIZATION = 102;
     static final int REQUEST_PERMISSIONS = 13;
 
@@ -99,34 +78,9 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         mydb = new DBProvider(this);
-        //Load database
-        try {
-            final File fileRes = new File(getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS).getAbsolutePath(), "res1.csv");
-            FileInputStream fis = new FileInputStream(fileRes);
-            DataInputStream in = new DataInputStream(fis);
-            BufferedReader br =
-                    new BufferedReader(new InputStreamReader(in));
-            String strLine;
-            while ((strLine = br.readLine()) != null) {
-                String[] str = strLine.split("\\|");
-                if(str.length == 3)
-                    mydb.insertIngredient(str[0], str[1], str[2]);
-                else
-                    throw new Exception("mydb: str != 3; " + strLine);
-            }
-            in.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }catch (Exception e) {
-            e.printStackTrace();
-        }
         //mydb.insertIngredient("AQUA", "HUMEKTANT, ROZPUSZCZLNIK", "1");
         //ArrayList<String> dbcontent = mydb.getAllCotacts();
         mProgressDialog = new ProgressDialog(this);
-
-//        ActivityCompat.requestPermissions(MainActivity.this,
-//                new String[]{Manifest.permission.GET_ACCOUNTS},
-//                REQUEST_PERMISSIONS);
     }
 
     @Override
@@ -157,16 +111,9 @@ public class MainActivity extends AppCompatActivity {
     public void click(View view) {
         switch(view.getId()){
             case R.id.imageButtonGallery:
-//                ActivityCompat.requestPermissions(MainActivity.this,
-//                        new String[]{Manifest.permission.GET_ACCOUNTS},
-//                        REQUEST_PERMISSIONS);
                 openGallery();
                 break;
         }
-    }
-
-    public DBProvider getDatabaseProvider() {
-        return mydb;
     }
 
     @Override
@@ -193,38 +140,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data){
         super.onActivityResult(requestCode, resultCode, data);
         if (resultCode == RESULT_OK && requestCode == PICK_IMAGE){
-//            imageUri = data.getData();
-//            FileUtils fileUtils = new FileUtils(MainActivity.this);
-//            String path = fileUtils.getPath(imageUri);
-//            ArrayList<String> annotations = new ArrayList<>();
             performCloudVisionRequest(data.getData());
-//        }
-//        if (requestCode == REQUEST_GALLERY_IMAGE && resultCode == RESULT_OK && data != null) {
-//            performCloudVisionRequest(data.getData());
-//        } else if (requestCode == REQUEST_CODE_PICK_ACCOUNT) {
-//            if (resultCode == RESULT_OK) {
-//                String email = data.getStringExtra(AccountManager.KEY_ACCOUNT_NAME);
-//                AccountManager am = AccountManager.get(this);
-//                Account[] accounts = am.getAccountsByType(GoogleAuthUtil.GOOGLE_ACCOUNT_TYPE);
-//                for (Account account : accounts) {
-//                    if (account.name.equals(email)) {
-//                        mAccount = account;
-//                        break;
-//                    }
-//                }
-//                getAuthToken();
-//            } else if (resultCode == RESULT_CANCELED) {
-//                Toast.makeText(this, "No Account Selected", Toast.LENGTH_SHORT)
-//                        .show();
-//            }
-        } else if (requestCode == REQUEST_ACCOUNT_AUTHORIZATION) {
-            if (resultCode == RESULT_OK) {
-                Bundle extra = data.getExtras();
-                onTokenReceived(extra.getString("authtoken"));
-            } else if (resultCode == RESULT_CANCELED) {
-                Toast.makeText(this, "Authorization Failed", Toast.LENGTH_SHORT)
-                        .show();
-            }
         }
     }
 
@@ -248,19 +164,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             protected BatchAnnotateImagesResponse doInBackground(Object... params) {
                 try {
-//                    GoogleCredential credential = new GoogleCredential().setAccessToken(accessToken);
-//                    HttpTransport httpTransport = AndroidHttp.newCompatibleTransport();
-//                    JsonFactory jsonFactory = GsonFactory.getDefaultInstance();
-//
-//                    Vision.Builder builder = new Vision.Builder
-//                            (httpTransport, jsonFactory, credential);
-//                    Vision vision = builder.build();
-
                     List<Feature> featureList = new ArrayList<>();
-//                    Feature labelDetection = new Feature();
-//                    labelDetection.setType("LABEL_DETECTION");
-//                    labelDetection.setMaxResults(10);
-//                    featureList.add(labelDetection);
 
                     Feature textDetection = new Feature();
                     textDetection.setType("TEXT_DETECTION");
@@ -274,7 +178,6 @@ public class MainActivity extends AppCompatActivity {
                     annotateImageRequest.setFeatures(featureList);
                     imageList.add(annotateImageRequest);
 
-
                     HttpTransport httpTransport = AndroidHttp.newCompatibleTransport();
                     JsonFactory jsonFactory = GsonFactory.getDefaultInstance();
                     VisionRequestInitializer requestInitializer = new VisionRequestInitializer("AIzaSyBPKK0rx4CLUHAZJlQHEd_-6QCdy02u-HQ");
@@ -286,18 +189,6 @@ public class MainActivity extends AppCompatActivity {
                     Vision.Images.Annotate annotateRequest = vision.images().annotate(batchAnnotateImagesRequest);
                     annotateRequest.setDisableGZipContent(true);
                     BatchAnnotateImagesResponse response = annotateRequest.execute();
-//                    return convertResponseToString(response);
-//
-//                    BatchAnnotateImagesRequest batchAnnotateImagesRequest =
-//                            new BatchAnnotateImagesRequest();
-//                    batchAnnotateImagesRequest.setRequests(imageList);
-//
-//                    Vision.Images.Annotate annotateRequest =
-//                            vision.images().annotate(batchAnnotateImagesRequest);
-//                    annotateRequest.setDisableGZipContent(true);
-//                    Log.d(TAG, "Sending request to Google Cloud");
-//
-//                    BatchAnnotateImagesResponse response = annotateRequest.execute();
                     return response;
 
                 } catch (GoogleJsonResponseException e) {
@@ -310,31 +201,56 @@ public class MainActivity extends AppCompatActivity {
 
             protected void onPostExecute(BatchAnnotateImagesResponse response) {
                 mProgressDialog.dismiss();
-                String sklad = getDetectedTexts(response);
+                String[] sklad = getDetectedTexts(response);
+                Intent intent = new Intent(MainActivity.this, ShowIngredient.class);
+                intent.setAction(Intent.ACTION_VIEW);
+                intent.putExtra("strings", sklad);
+                startActivity(intent);
                 System.out.println("aaa");
             }
 
         }.execute();
     }
 
-    private String getDetectedTexts(BatchAnnotateImagesResponse response){
+    private String[] getDetectedTexts(BatchAnnotateImagesResponse response){
         StringBuilder message = new StringBuilder("");
         ArrayList<String> inredientsList = new ArrayList<>();
         List<EntityAnnotation> texts = response.getResponses().get(0)
                 .getTextAnnotations();
         if (texts != null) {
             for (EntityAnnotation text : texts) {
-                message.append(String.format(Locale.getDefault(), "%s: %s",
-                        text.getLocale(), text.getDescription()));
+                message.append(String.format(Locale.getDefault(), "%s",
+                        text.getDescription()));
                 message.append("\n");
-                inredientsList.add(String.format(Locale.getDefault(), "%s: %s",
-                        text.getLocale(), text.getDescription()));
+                inredientsList.add(String.format(Locale.getDefault(), "%s",
+                        text.getDescription()));
             }
-        } else {
-            message.append("nothing\n");
         }
-
-        return message.toString();
+        String fullMessage = message.toString();
+        fullMessage = fullMessage.replace("\n", "");
+        int inciIndex = fullMessage.indexOf("INCI");
+        int ingredientsIndex = fullMessage.indexOf("Ingredients");
+        int colonIndex, dotIndex;
+        if(inciIndex > -1 || ingredientsIndex > -1) {
+            colonIndex = fullMessage.indexOf(":", inciIndex > ingredientsIndex ? inciIndex : ingredientsIndex);
+            if(colonIndex > -1) {
+                fullMessage = fullMessage.substring(colonIndex + 1);
+                if(fullMessage.indexOf(" ") == 0)
+                    fullMessage = fullMessage.substring(1);
+                dotIndex = fullMessage.indexOf(".", colonIndex);
+                if(dotIndex > -1)
+                    fullMessage = fullMessage.substring(0, dotIndex);
+            }
+        }
+        fullMessage = fullMessage.replace(", ", ",");
+        fullMessage = fullMessage.replace(" ,", ",");
+        List<String> ingredientsList = Arrays.asList(fullMessage.split(","));
+        ArrayList<String> ingredientsList2 = new ArrayList<>();
+        for(String name : ingredientsList){
+            ingredientsList2.add(name.replaceAll("([a-z])([A-Z])", "$1 $2"));
+        }
+        String[] ingredientsArray = ingredientsList2.toArray(new String[0]);
+        return ingredientsArray;
     }
 
     public Bitmap resizeBitmap(Bitmap bitmap) {
@@ -367,46 +283,4 @@ public class MainActivity extends AppCompatActivity {
         return image;
     }
 
-//    private void launchImagePicker() {
-//        Intent intent = new Intent();
-//        intent.setType("image/*");
-//        intent.setAction(Intent.ACTION_GET_CONTENT);
-//        startActivityForResult(Intent.createChooser(intent, "Select an image"),
-//                REQUEST_GALLERY_IMAGE);
-//    }
-
-//    private void pickUserAccount() {
-//        String[] accountTypes = new String[]{GoogleAuthUtil.GOOGLE_ACCOUNT_TYPE};
-//        Intent intent = AccountPicker.newChooseAccountIntent(null, null,
-//                accountTypes, false, null, null, null, null);
-//        startActivityForResult(intent, REQUEST_CODE_PICK_ACCOUNT);
-//    }
-
-    public void onTokenReceived(String token){
-        accessToken = token;
-        //launchImagePicker();
-    }
-//    private void getAuthToken() {
-//        String SCOPE = "oauth2:https://www.googleapis.com/auth/cloud-platform";
-//        if (mAccount == null) {
-//            pickUserAccount();
-//        } else {
-//            new GetOAuthToken(MainActivity.this, mAccount, SCOPE, REQUEST_ACCOUNT_AUTHORIZATION)
-//                    .execute();
-//        }
-//    }
-
-//    @Override
-//    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
-//                                           @NonNull int[] grantResults) {
-//        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-//        switch (requestCode) {
-//            case REQUEST_PERMISSIONS:
-//                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-//                    getAuthToken();
-//                } else {
-//                    Toast.makeText(MainActivity.this, "Permission Denied!", Toast.LENGTH_SHORT).show();
-//                }
-//        }
-//    }
 }

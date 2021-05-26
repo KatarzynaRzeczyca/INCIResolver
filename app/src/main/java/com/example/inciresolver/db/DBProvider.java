@@ -56,12 +56,13 @@ public class DBProvider extends SQLiteOpenHelper {
 
     public Ingredient getIngredientByName(String name) {
         SQLiteDatabase db = this.getReadableDatabase();
+        name = name.toLowerCase();
         Cursor res =  db.rawQuery( "select * from contacts where name='"+name+"'", null );
         if(res.getCount() < 1){
             return new Ingredient();
         }
         res.moveToFirst();
-        String inciName = res.getString(res.getColumnIndex(DBProvider.INCI_COLUMN_NAME));
+        String inciName = res.getString(res.getColumnIndex(DBProvider.INCI_COLUMN_NAME)).toUpperCase();
         String inciDescription = res.getString(res.getColumnIndex(DBProvider.INCI_COLUMN_DESCRIPTION));
         String inciQuality = res.getString(res.getColumnIndex(DBProvider.INCI_COLUMN_QUALITY));
         Ingredient ingredient = new Ingredient(inciName, inciDescription, inciQuality);
